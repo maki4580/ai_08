@@ -1,0 +1,5 @@
+# distディレクトリをGit管理外とする
+dist/
+
+# node_modulesディレクトリをGit管理外とする
+node_modules/
