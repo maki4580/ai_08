@@ -55,15 +55,11 @@ async function modifyExcel(): Promise<void> {
     worksheet.getRow(DATA_START_ROW).eachCell({ includeEmpty: true }, (cell) => {
         cell.value = null;
     });
+    worksheet.duplicateRow(DATA_START_ROW, sampleData.length - 1, true);
 
     // Set data rows
     sampleData.forEach((item, index) => {
         const row = index + DATA_START_ROW;
-        
-        // Copy row settings
-        if (index !== 0) {
-            duplicateRowWithStyles(worksheet, DATA_START_ROW, row);
-        }
 
         // Set basic values
         worksheet.getCell(`A${row}`).value = item.id;
@@ -84,43 +80,25 @@ async function modifyExcel(): Promise<void> {
         });
     });
 
-    await workbook.xlsx.writeFile('output.xlsx');
-    console.log('Excel file has been modified and saved as output.xlsx');
-}
-
-function duplicateRowWithStyles(worksheet: ExcelJS.Worksheet, sourceRowNum: number, targetRowNum: number): void {
-    const sourceRow = worksheet.getRow(sourceRowNum);
-    const targetRow = worksheet.getRow(targetRowNum);
-
-    sourceRow.eachCell({ includeEmpty: true }, (sourceCell, colNumber) => {
-        const targetCell = targetRow.getCell(colNumber);
-        
-        // スタイルのコピー
-        targetCell.style = JSON.parse(JSON.stringify(sourceCell.style));
-        
-        // フォント設定のコピー
-        if (sourceCell.font) {
-            targetCell.font = JSON.parse(JSON.stringify(sourceCell.font));
-        }
-
-        // 罫線設定のコピー
-        if (sourceCell.border) {
-            targetCell.border = JSON.parse(JSON.stringify(sourceCell.border));
-        }
-
-        // 保護状態のコピー
-        if (sourceCell.protection) {
-            targetCell.protection = {
-                locked: sourceCell.protection.locked,
-                hidden: sourceCell.protection.hidden
-            };
-        }
+    // シートの保護を再設定
+    await worksheet.protect('password123', {
+        selectLockedCells: true,
+        selectUnlockedCells: true,
+        formatCells: false,
+        formatColumns: false,
+        formatRows: false,
+        insertColumns: false,
+        insertRows: false,
+        insertHyperlinks: false,
+        deleteColumns: false,
+        deleteRows: false,
+        sort: false,
+        autoFilter: false,
+        pivotTables: false
     });
 
-    // 行の高さをコピー
-    if (sourceRow.height) {
-        targetRow.height = sourceRow.height;
-    }
+    await workbook.xlsx.writeFile('output.xlsx');
+    console.log('Excel file has been modified and saved as output.xlsx');
 }
 
 modifyExcel().catch(err => console.error('Error:', err));
